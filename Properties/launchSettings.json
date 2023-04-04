@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "function_cicd": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7253",
+      "launchBrowser": false
+    }
+  }
+}
