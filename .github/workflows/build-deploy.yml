@@ -6,6 +6,7 @@ on:
       - "develop"
       - "main"
     paths:
+      - Function1.cs
       - .github/workflows/build-deploy.yml
       - .github/workflows/workflow-azure-functions-build-and-publish-steps.yml
       - .github/workflows/workflow-azure-functions-deployment-steps.yml
