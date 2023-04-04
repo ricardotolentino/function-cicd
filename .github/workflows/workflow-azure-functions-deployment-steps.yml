@@ -1,0 +1,52 @@
+name: "Reusable Workflow - Azure Functions Deployment Steps"
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      appDisplayName:
+        required: true
+        type: string
+      artifacts:
+        required: true
+        type: string
+
+jobs:
+ azure_functions_build_and_publish_steps:
+    name: "Deployment"
+    runs-on: windows-latest
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: 'Show template parameters'
+        run: |
+          Write-Host "::group::Azure Functions deployment template parameters"
+          Write-Host "::notice::Environment: ${{ inputs.environment }}"
+          Write-Host "::notice::Azure Functions app name ${{ vars.FUNCTION_NAME }}"
+          Write-Host "::notice::Display name: ${{ inputs.appDisplayName }}"
+          Write-Host "::notice::Artifacts: ${{ inputs.artifacts }}"
+          Write-Host "::endgroup::"
+      - name: 'Download ${{ inputs.appDisplayName }} artifact'
+        if: ${{ success( )}}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.artifacts }}
+          path: ${{ inputs.artifacts }}
+      - name: 'Azure login'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - run: |
+          ls
+      - name: 'Deploy Azure Function'
+        uses: azure/functions-action@v1
+        with:
+          app-name: ${{ vars.FUNCTION_NAME }}
+          package: ${{ inputs.artifacts }}

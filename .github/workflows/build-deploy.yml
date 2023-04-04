@@ -1,0 +1,84 @@
+name: "Build and deploy"
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "main"
+    paths:
+      - .github/workflows/build-deploy.yml
+      - .github/workflows/workflow-azure-functions-build-and-publish-steps.yml
+      - .github/workflows/workflow-azure-functions-deployment-steps.yml
+
+env:
+  artifactsName: function-cicd-artifact
+  vmImageName: 'windows-latest'
+  buildConfiguration: 'Release'
+  solutionFilePath: 'function-cicd.sln'
+  #artifactsPath: '$(Build.ArtifactStagingDirectory)\support-functions-$(Build.BuildId)'
+  #artifactsPath: '$env:GITHUB_PATH\support-functions-$env:GITHUB_RUN_NUMBER'
+  artifactsPathPrefix: '.\artifacts'
+  developmpentServiceConnection: 'Dev_Watts_Commercial_IoT'
+  qaServiceConnection: 'Dev_Watts_Commercial_IoT'
+  stagingServiceConnection: 'Dev_Watts_Commercial_IoT'
+  productionServiceConnection: 'Prod_Watts_Commercial_IoT'
+  #isDevelopmentBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/development')]
+  #isReleaseBranch: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')]
+  #isProductionAllowedBranch: $[or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
+
+jobs:
+  prepare_env_variables:
+    name: "Prepare environment variables for reusable workflow"
+    runs-on: windows-latest
+    outputs:
+      solutionFilePath: ${{ steps.set_outputs.outputs.solutionFilePath }}
+      buildConfiguration: ${{ steps.set_outputs.outputs.buildConfiguration }}
+      artifactsName: ${{ steps.set_outputs.outputs.artifactsName }}
+      artifactsPath: ${{ steps.set_outputs.outputs.artifactsPath }}
+    steps:
+      - name: "Set outputs"
+        id: set_outputs
+        shell: pwsh
+        run: |
+          echo "solutionFilePath=$env:solutionFilePath" >> $env:GITHUB_OUTPUT
+          echo "buildConfiguration=$env:buildConfiguration" >> $env:GITHUB_OUTPUT
+          echo "artifactsName=$env:artifactsName" >> $env:GITHUB_OUTPUT
+          echo "artifactsPath=$env:artifactsPathPrefix-$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT
+      - name: "Print outputs"
+        shell: pwsh
+        run: |
+          Write-Host "Outputs: ${{ steps.set_outputs.outputs.solutionFilePath }}"
+          Write-Host "Outputs: ${{ steps.set_outputs.outputs.buildConfiguration }}"
+          Write-Host "Outputs: ${{ steps.set_outputs.outputs.artifactsName }}"
+          Write-Host "Outputs: ${{ steps.set_outputs.outputs.artifactsPath }}"
+  build:
+    needs: [prepare_env_variables]
+    name: "Build"
+    uses: ./.github/workflows/workflow-azure-functions-build-and-publish-steps.yml
+    with:
+      appDisplayName: Commercial Support Functions
+      projectsOrSolution: ${{ needs.prepare_env_variables.outputs.solutionFilePath }}
+      buildConfiguration: ${{ needs.prepare_env_variables.outputs.buildConfiguration }}
+      artifacts: ${{ needs.prepare_env_variables.outputs.artifactsName }}
+      artifactsPath: ${{ needs.prepare_env_variables.outputs.artifactsPath }}
+      netSdkVersion: '6.x'
+  deploy_to_development:
+    if: github.ref == 'refs/heads/develop'
+    needs: [prepare_env_variables, build]
+    name: "Deploy to Development"
+    uses: ./.github/workflows/workflow-azure-functions-deployment-steps.yml
+    with:
+      environment: dev
+      appDisplayName: Commercial Support Functions
+      artifacts: ${{ needs.prepare_env_variables.outputs.artifactsName }}
+    secrets: inherit
+  deploy_to_production:
+    if: github.ref == 'refs/heads/main'
+    needs: [prepare_env_variables, build]
+    name: "Deploy to Production"
+    uses: ./.github/workflows/workflow-azure-functions-deployment-steps.yml
+    with:
+      environment: prod
+      appDisplayName: Commercial Support Functions
+      artifacts: ${{ needs.prepare_env_variables.outputs.artifactsName }}
+    secrets: inherit

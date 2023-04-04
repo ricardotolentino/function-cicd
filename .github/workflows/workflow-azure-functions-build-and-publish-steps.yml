@@ -1,0 +1,67 @@
+name: "Reusable Workflow - Azure Functions Build and Publish Steps"
+
+on:
+  workflow_call:
+    inputs:
+      appDisplayName:
+        required: true
+        type: string
+      projectsOrSolution:
+        required: true
+        type: string
+      buildConfiguration:
+        required: true
+        type: string
+      artifacts:
+        required: true
+        type: string
+      artifactsPath:
+        required: true
+        type: string
+      netSdkVersion:
+        required: true
+        type: string
+
+jobs:
+ azure_functions_build_and_publish_steps:
+    name: "Build and publish"
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: 'Show template parameters'
+        run: |
+          Write-Host "::group::Azure Functions App build and publish template parameters"
+          Write-Host "::notice::Application display name: ${{ inputs.appDisplayName }}"
+          Write-Host "::notice::Projects or solution: ${{ inputs.projectsOrSolution }}"
+          Write-Host "::notice::Build configuration: ${{ inputs.buildConfiguration }}"
+          Write-Host "::notice::Artifacts: ${{ inputs.artifacts }}"
+          Write-Host "::notice::Artifacts path: ${{ inputs.artifactsPath }}"
+          Write-Host "::notice::.NET Core SDK version: ${{ inputs.netSdkVersion }}"
+          Write-Host "::endgroup::"
+      - name: 'Use .NET Core SDK ${{ inputs.netSdkVersion }}'
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '${{ inputs.netSdkVersion }}'
+      - name: 'Restore ${{ inputs.appDisplayName }} solution'
+        run: |
+          dotnet --version
+          dotnet restore "${{ inputs.projectsOrSolution }}" --verbosity minimal
+      - name: 'Build ${{ inputs.appDisplayName }} solution'
+        run: |
+          dotnet build "${{ inputs.projectsOrSolution }}" --configuration "${{ inputs.buildConfiguration }}"
+      - name: 'Publish ${{ inputs.appDisplayName }}'
+        if: ${{ success( )}}
+        run: |
+          Write-Host "Artifacts path: ${{ inputs.artifactsPath }}"
+          dotnet publish "${{ inputs.projectsOrSolution }}" --configuration "${{ inputs.buildConfiguration }}" --output "${{ inputs.artifactsPath }}"
+      - name: 'Publish ${{ inputs.appDisplayName }} artifact'
+        if: ${{ success( )}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.artifacts }}
+          path: ${{ inputs.artifactsPath }}
