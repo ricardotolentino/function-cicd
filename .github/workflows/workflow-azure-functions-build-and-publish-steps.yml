@@ -43,25 +43,25 @@ jobs:
           Write-Host "::notice::Artifacts path: ${{ inputs.artifactsPath }}"
           Write-Host "::notice::.NET Core SDK version: ${{ inputs.netSdkVersion }}"
           Write-Host "::endgroup::"
-      - name: 'Use .NET Core SDK ${{ inputs.netSdkVersion }}'
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '${{ inputs.netSdkVersion }}'
-      - name: 'Restore ${{ inputs.appDisplayName }} solution'
-        run: |
-          dotnet --version
-          dotnet restore "${{ inputs.projectsOrSolution }}" --verbosity minimal
-      - name: 'Build ${{ inputs.appDisplayName }} solution'
-        run: |
-          dotnet build "${{ inputs.projectsOrSolution }}" --configuration "${{ inputs.buildConfiguration }}"
-      - name: 'Publish ${{ inputs.appDisplayName }}'
-        if: ${{ success( )}}
-        run: |
-          Write-Host "Artifacts path: ${{ inputs.artifactsPath }}"
-          dotnet publish "${{ inputs.projectsOrSolution }}" --configuration "${{ inputs.buildConfiguration }}" --output "${{ inputs.artifactsPath }}"
-      - name: 'Publish ${{ inputs.appDisplayName }} artifact'
-        if: ${{ success( )}}
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ inputs.artifacts }}
-          path: ${{ inputs.artifactsPath }}
+#      - name: 'Use .NET Core SDK ${{ inputs.netSdkVersion }}'
+#        uses: actions/setup-dotnet@v3
+#        with:
+#          dotnet-version: '${{ inputs.netSdkVersion }}'
+#      - name: 'Restore ${{ inputs.appDisplayName }} solution'
+#        run: |
+#          dotnet --version
+#          dotnet restore "${{ inputs.projectsOrSolution }}" --verbosity minimal
+#      - name: 'Build ${{ inputs.appDisplayName }} solution'
+#        run: |
+#          dotnet build "${{ inputs.projectsOrSolution }}" --configuration "${{ inputs.buildConfiguration }}"
+#      - name: 'Publish ${{ inputs.appDisplayName }}'
+#        if: ${{ success( )}}
+#        run: |
+#          Write-Host "Artifacts path: ${{ inputs.artifactsPath }}"
+#          dotnet publish "${{ inputs.projectsOrSolution }}" --configuration "${{ inputs.buildConfiguration }}" --output "${{ inputs.artifactsPath }}"
+#      - name: 'Publish ${{ inputs.appDisplayName }} artifact'
+#        if: ${{ success( )}}
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: ${{ inputs.artifacts }}
+#          path: ${{ inputs.artifactsPath }}
